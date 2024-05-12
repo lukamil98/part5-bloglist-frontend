@@ -112,7 +112,6 @@ const App = () => {
         <input
           type="text"
           value={username}
-          name="Username"
           onChange={({ target }) => setUsername(target.value)}
         />
       </div>
@@ -121,7 +120,6 @@ const App = () => {
         <input
           type="password"
           value={password}
-          name="Password"
           onChange={({ target }) => setPassword(target.value)}
         />
       </div>
@@ -164,12 +162,12 @@ const App = () => {
     <div>
       <h1>Blogs</h1>
       <Notification message={errorMessage} />
-
-      {!user && loginForm()}
-      {user && (
+      {user === null ? (
+        loginForm()
+      ) : (
         <div>
           <p>
-            {user.name} logged in <button onClick={handleLogout}>logout</button>
+            {user.name} logged-in <button onClick={handleLogout}>logout</button>
           </p>
           {blogForm()}
         </div>
