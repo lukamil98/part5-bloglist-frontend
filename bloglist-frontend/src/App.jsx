@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Blog from "./components/Blog"
 import Notification from "./components/Notification"
 import Footer from "./components/Footer"
 import blogService from "./services/blogs"
 import loginService from "./services/login"
+import Togglable from "./components/Togglable"
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -15,9 +16,11 @@ const App = () => {
   })
   const [showAll, setShowAll] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
+  const [successMessage, setSuccessMessage] = useState(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [user, setUser] = useState(null)
+  const blogFormRef = useRef()
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser")
@@ -30,6 +33,8 @@ const App = () => {
 
   useEffect(() => {
     blogService.getAll().then((initialBlogs) => {
+      // Sort blogs by the number of likes
+      initialBlogs.sort((a, b) => b.likes - a.likes)
       setBlogs(initialBlogs)
     })
   }, [])
@@ -46,6 +51,13 @@ const App = () => {
         url: "",
         likes: 0,
       })
+      setSuccessMessage(
+        `Blog "${returnedBlog.title}" added successfully by ${returnedBlog.author}`
+      )
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+      blogFormRef.current.toggleVisibility() // Hide the blog form after creation
     } catch (exception) {
       console.error("Adding blog failed:", exception)
       setErrorMessage("Failed to add blog")
@@ -88,10 +100,13 @@ const App = () => {
   }
 
   const toggleImportance = async (id) => {
-    const blogToToggle = blogs.find((blog) => blog.id === id)
-    const updatedBlog = { ...blogToToggle, important: !blogToToggle.important }
-
     try {
+      const blogToToggle = blogs.find((blog) => blog.id === id)
+      const updatedBlog = {
+        ...blogToToggle,
+        important: !blogToToggle.important,
+      } // Toggle the importance
+
       const returnedBlog = await blogService.update(id, updatedBlog)
       setBlogs(blogs.map((blog) => (blog.id !== id ? blog : returnedBlog)))
     } catch (exception) {
@@ -103,7 +118,38 @@ const App = () => {
     }
   }
 
-  const blogsToShow = showAll ? blogs : blogs.filter((blog) => blog.important)
+  const likeBlog = async (id) => {
+    try {
+      const blogToLike = blogs.find((blog) => blog.id === id)
+      const updatedBlog = { ...blogToLike, likes: blogToLike.likes + 1 }
+
+      const returnedBlog = await blogService.update(id, updatedBlog)
+      setBlogs(blogs.map((blog) => (blog.id !== id ? blog : returnedBlog)))
+    } catch (exception) {
+      console.error("Liking blog failed:", exception)
+      setErrorMessage("Failed to like blog")
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    }
+  }
+
+  const deleteBlog = async (id) => {
+    try {
+      await blogService.remove(id)
+      setBlogs(blogs.filter((blog) => blog.id !== id))
+      setSuccessMessage("Blog deleted successfully")
+      setTimeout(() => {
+        setSuccessMessage(null)
+      }, 5000)
+    } catch (exception) {
+      console.error("Deleting blog failed:", exception)
+      setErrorMessage("Failed to delete blog")
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+    }
+  }
 
   const loginForm = () => (
     <form onSubmit={handleLogin}>
@@ -128,40 +174,52 @@ const App = () => {
   )
 
   const blogForm = () => (
-    <form onSubmit={addBlog}>
-      <input
-        placeholder="Title"
-        name="title"
-        value={newBlog.title}
-        onChange={handleBlogChange}
-      />
-      <input
-        placeholder="Author"
-        name="author"
-        value={newBlog.author}
-        onChange={handleBlogChange}
-      />
-      <input
-        placeholder="URL"
-        name="url"
-        value={newBlog.url}
-        onChange={handleBlogChange}
-      />
-      <input
-        placeholder="Likes"
-        type="number"
-        name="likes"
-        value={newBlog.likes}
-        onChange={handleBlogChange}
-      />
-      <button type="submit">Save</button>
-    </form>
+    <Togglable buttonLabel="Create new blog" ref={blogFormRef}>
+      <form onSubmit={addBlog}>
+        <input
+          placeholder="Title"
+          name="title"
+          value={newBlog.title}
+          onChange={handleBlogChange}
+        />
+        <input
+          placeholder="Author"
+          name="author"
+          value={newBlog.author}
+          onChange={handleBlogChange}
+        />
+        <input
+          placeholder="URL"
+          name="url"
+          value={newBlog.url}
+          onChange={handleBlogChange}
+        />
+        <input
+          placeholder="Likes"
+          type="number"
+          name="likes"
+          value={newBlog.likes}
+          onChange={handleBlogChange}
+        />
+        <button type="submit">Save</button>
+      </form>
+    </Togglable>
   )
+
+  const NotificationComponent = ({ message, className }) => {
+    if (message === null) {
+      return null
+    }
+
+    return <div className={className}>{message}</div>
+  }
 
   return (
     <div>
       <h1>Blogs</h1>
-      <Notification message={errorMessage} />
+      <NotificationComponent message={errorMessage} />
+      <NotificationComponent message={successMessage} className="success" />
+
       {user === null ? (
         loginForm()
       ) : (
@@ -181,17 +239,21 @@ const App = () => {
             </button>
           </div>
           <ul>
-            {blogsToShow.map((blog) => (
-              <Blog
-                key={blog.id}
-                blog={blog}
-                toggleImportance={toggleImportance}
-              />
-            ))}
+            {blogs
+              .filter((blog) => (showAll ? true : blog.important))
+              .map((blog) => (
+                <Blog
+                  key={blog.id}
+                  blog={blog}
+                  toggleImportance={toggleImportance}
+                  likeBlog={likeBlog}
+                  deleteBlog={deleteBlog}
+                  user={user}
+                />
+              ))}
           </ul>
         </div>
       )}
-
       <Footer />
     </div>
   )
