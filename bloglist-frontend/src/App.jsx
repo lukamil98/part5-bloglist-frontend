@@ -43,13 +43,18 @@ const App = () => {
     event.preventDefault()
 
     try {
-      const returnedBlog = await blogService.create(newBlog)
+      // Parse likes value to ensure it's a number
+      const newBlogWithLikesAsNumber = {
+        ...newBlog,
+        likes: parseInt(newBlog.likes),
+      }
+      const returnedBlog = await blogService.create(newBlogWithLikesAsNumber)
       setBlogs(blogs.concat(returnedBlog))
       setNewBlog({
         title: "",
         author: "",
         url: "",
-        likes: 0,
+        likes: 0, // Reset likes to 0 for next blog
       })
       setSuccessMessage(
         `Blog "${returnedBlog.title}" added successfully by ${returnedBlog.author}`
@@ -104,8 +109,8 @@ const App = () => {
       const blogToToggle = blogs.find((blog) => blog.id === id)
       const updatedBlog = {
         ...blogToToggle,
-        important: !blogToToggle.important,
-      } // Toggle the importance
+        action: "toggleImportance", // Include the action field
+      }
 
       const returnedBlog = await blogService.update(id, updatedBlog)
       setBlogs(blogs.map((blog) => (blog.id !== id ? blog : returnedBlog)))
@@ -121,7 +126,11 @@ const App = () => {
   const likeBlog = async (id) => {
     try {
       const blogToLike = blogs.find((blog) => blog.id === id)
-      const updatedBlog = { ...blogToLike, likes: blogToLike.likes + 1 }
+      const updatedBlog = {
+        ...blogToLike,
+        action: "like",
+        likes: parseInt(blogToLike.likes) + 1,
+      } // Include action field
 
       const returnedBlog = await blogService.update(id, updatedBlog)
       setBlogs(blogs.map((blog) => (blog.id !== id ? blog : returnedBlog)))
@@ -206,19 +215,11 @@ const App = () => {
     </Togglable>
   )
 
-  const NotificationComponent = ({ message, className }) => {
-    if (message === null) {
-      return null
-    }
-
-    return <div className={className}>{message}</div>
-  }
-
   return (
     <div>
       <h1>Blogs</h1>
-      <NotificationComponent message={errorMessage} />
-      <NotificationComponent message={successMessage} className="success" />
+      <Notification message={errorMessage} />
+      <Notification message={successMessage} className="success" />
 
       {user === null ? (
         loginForm()
