@@ -90,6 +90,7 @@ const App = () => {
       setUser(user)
       setUsername("")
       setPassword("")
+      console.log(user)
     } catch (exception) {
       console.error("Login failed:", exception)
       setErrorMessage("Wrong credentials")
@@ -226,7 +227,8 @@ const App = () => {
       ) : (
         <div>
           <p>
-            {user.name} logged-in <button onClick={handleLogout}>logout</button>
+            {user.username} logged-in{" "}
+            <button onClick={handleLogout}>logout</button>
           </p>
           {blogForm()}
         </div>

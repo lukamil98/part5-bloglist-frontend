@@ -33,7 +33,7 @@ const Blog = ({ blog, toggleImportance, user, likeBlog, deleteBlog }) => {
         <div>
           <p>URL: {blog.url}</p>
           <p>Likes: {blog.likes}</p>
-          <p>Added by: {blog.user ? blog.user.name : user.name}</p>
+          <p>Added by: {blog.user ? blog.user.username : user.username}</p>
           <button onClick={handleLike}>Like</button>
           <button onClick={handleToggleImportance}>{label}</button>
           {user && blog.user && user.username === blog.user.username && (
