@@ -1,5 +1,4 @@
 import React, { useState } from "react"
-
 const Blog = ({ blog, toggleImportance, user, likeBlog, deleteBlog }) => {
   const [showDetails, setShowDetails] = useState(false)
 

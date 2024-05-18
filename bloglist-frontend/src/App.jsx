@@ -5,6 +5,7 @@ import Footer from "./components/Footer"
 import blogService from "./services/blogs"
 import loginService from "./services/login"
 import Togglable from "./components/Togglable"
+import BlogForm from "./components/BlogForm"
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -33,7 +34,6 @@ const App = () => {
 
   useEffect(() => {
     blogService.getAll().then((initialBlogs) => {
-      // Sort blogs by the number of likes
       initialBlogs.sort((a, b) => b.likes - a.likes)
       setBlogs(initialBlogs)
     })
@@ -43,7 +43,6 @@ const App = () => {
     event.preventDefault()
 
     try {
-      // Parse likes value to ensure it's a number
       const newBlogWithLikesAsNumber = {
         ...newBlog,
         likes: parseInt(newBlog.likes),
@@ -54,7 +53,7 @@ const App = () => {
         title: "",
         author: "",
         url: "",
-        likes: 0, // Reset likes to 0 for next blog
+        likes: 0,
       })
       setSuccessMessage(
         `Blog "${returnedBlog.title}" added successfully by ${returnedBlog.author}`
@@ -62,7 +61,7 @@ const App = () => {
       setTimeout(() => {
         setSuccessMessage(null)
       }, 5000)
-      blogFormRef.current.toggleVisibility() // Hide the blog form after creation
+      blogFormRef.current.toggleVisibility()
     } catch (exception) {
       console.error("Adding blog failed:", exception)
       setErrorMessage("Failed to add blog")
@@ -110,7 +109,7 @@ const App = () => {
       const blogToToggle = blogs.find((blog) => blog.id === id)
       const updatedBlog = {
         ...blogToToggle,
-        action: "toggleImportance", // Include the action field
+        action: "toggleImportance",
       }
 
       const returnedBlog = await blogService.update(id, updatedBlog)
@@ -131,7 +130,7 @@ const App = () => {
         ...blogToLike,
         action: "like",
         likes: parseInt(blogToLike.likes) + 1,
-      } // Include action field
+      }
 
       const returnedBlog = await blogService.update(id, updatedBlog)
       setBlogs(blogs.map((blog) => (blog.id !== id ? blog : returnedBlog)))
@@ -183,39 +182,6 @@ const App = () => {
     </form>
   )
 
-  const blogForm = () => (
-    <Togglable buttonLabel="Create new blog" ref={blogFormRef}>
-      <form onSubmit={addBlog}>
-        <input
-          placeholder="Title"
-          name="title"
-          value={newBlog.title}
-          onChange={handleBlogChange}
-        />
-        <input
-          placeholder="Author"
-          name="author"
-          value={newBlog.author}
-          onChange={handleBlogChange}
-        />
-        <input
-          placeholder="URL"
-          name="url"
-          value={newBlog.url}
-          onChange={handleBlogChange}
-        />
-        <input
-          placeholder="Likes"
-          type="number"
-          name="likes"
-          value={newBlog.likes}
-          onChange={handleBlogChange}
-        />
-        <button type="submit">Save</button>
-      </form>
-    </Togglable>
-  )
-
   return (
     <div>
       <h1>Blogs</h1>
@@ -230,7 +196,13 @@ const App = () => {
             {user.username} logged-in{" "}
             <button onClick={handleLogout}>logout</button>
           </p>
-          {blogForm()}
+          <Togglable buttonLabel="Create new blog" ref={blogFormRef}>
+            <BlogForm
+              addBlog={addBlog}
+              newBlog={newBlog}
+              handleBlogChange={handleBlogChange}
+            />
+          </Togglable>
         </div>
       )}
 
