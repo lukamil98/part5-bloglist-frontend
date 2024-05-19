@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
+import axios from "axios" // Import axios library
 import Blog from "./components/Blog"
 import Notification from "./components/Notification"
 import Footer from "./components/Footer"
@@ -6,6 +7,7 @@ import blogService from "./services/blogs"
 import loginService from "./services/login"
 import Togglable from "./components/Togglable"
 import BlogForm from "./components/BlogForm"
+import UserCreationForm from "./components/userCreationForm" // Import UserCreationForm component
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -123,6 +125,15 @@ const App = () => {
     }
   }
 
+  const createUser = async (username, password) => {
+    try {
+      const response = await axios.post("/api/users", { username, password })
+      console.log("User created successfully:", response.data)
+    } catch (error) {
+      console.error("Error creating user:", error.response.data.error)
+    }
+  }
+
   const likeBlog = async (id) => {
     try {
       const blogToLike = blogs.find((blog) => blog.id === id)
@@ -189,7 +200,11 @@ const App = () => {
       <Notification message={successMessage} className="success" />
 
       {user === null ? (
-        loginForm()
+        <>
+          {loginForm()}
+          <UserCreationForm createUser={createUser} />{" "}
+          {/* Render UserCreationForm component */}
+        </>
       ) : (
         <div>
           <p>
